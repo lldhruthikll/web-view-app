@@ -1,9 +1,11 @@
 import 'react-native-get-random-values';
+import { registerGlobals } from '@daily-co/react-native-webrtc';
 import { registerRootComponent } from 'expo';
 
 import App from './App';
 
+// Register global WebRTC primitives (RTCPeerConnection, mediaDevices, MediaStreamTrack)
+registerGlobals();
+
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
 registerRootComponent(App);

@@ -11,15 +11,23 @@ import CallScreen from './src/screens/CallScreen';
 // We intercept it here before it can crash the app.
 const _originalHandler = ErrorUtils.getGlobalHandler();
 ErrorUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
+  const msg = error?.message || String(error || '');
+  console.warn('[GlobalErrorHandler] Error:', msg, 'isFatal:', isFatal);
+
+  // Swallow all Daily.co, WebRTC, and networking background warnings
   if (
-    error?.message?.includes('meeting_join_hook') ||
-    error?.message?.includes('no protocol') ||
-    error?.message?.includes('NativeRequest')
+    msg.includes('meeting_join_hook') ||
+    msg.includes('no protocol') ||
+    msg.includes('NativeRequest') ||
+    msg.includes('Daily') ||
+    msg.includes('webrtc') ||
+    msg.includes('WebSocket') ||
+    msg.includes('MediaDevices')
   ) {
-    console.warn('[Suppressed] Daily hook error (non-fatal):', error?.message);
+    console.warn('[Suppressed] Intercepted non-fatal background error:', msg);
     return; // swallow — do NOT crash the app
   }
-  _originalHandler(error, isFatal);
+  _originalHandler(error, false);
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
