@@ -10,6 +10,7 @@ export type RootStackParamList = {
   Call: {
     roomUrl: string;
     roomName: string;
+    token: string;
   };
 };
 

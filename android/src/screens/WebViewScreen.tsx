@@ -25,6 +25,7 @@ interface WebViewMessage {
   type: string;
   roomUrl?: string;
   roomName?: string;
+  token?: string;
 }
 
 async function requestPermissions(): Promise<void> {
@@ -68,6 +69,7 @@ export default function WebViewScreen() {
         navigation.navigate('Call', {
           roomUrl: message.roomUrl,
           roomName: message.roomName,
+          token: message.token || '',
         });
       }
     } catch (err) {

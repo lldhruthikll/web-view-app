@@ -3,6 +3,7 @@ import { useState } from 'react';
 interface RoomResponse {
   roomUrl: string;
   roomName: string;
+  token?: string;
   error?: string;
 }
 
@@ -10,7 +11,7 @@ export default function App() {
   const [roomNameInput, setRoomNameInput] = useState<string>('demo-123');
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [roomData, setRoomData] = useState<{ roomUrl: string; roomName: string } | null>(null);
+  const [roomData, setRoomData] = useState<{ roomUrl: string; roomName: string; token: string } | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [postMessageSent, setPostMessageSent] = useState<boolean>(false);
 
@@ -60,7 +61,8 @@ export default function App() {
 
       setRoomData({
         roomUrl: data.roomUrl,
-        roomName: data.roomName
+        roomName: data.roomName,
+        token: data.token || ''
       });
 
       // Room created — user will manually tap "Join on Phone" to navigate
@@ -120,7 +122,8 @@ export default function App() {
       const payload = JSON.stringify({
         type: 'JOIN_ROOM',
         roomUrl: roomData.roomUrl,
-        roomName: roomData.roomName
+        roomName: roomData.roomName,
+        token: roomData.token || ''
       });
       window.ReactNativeWebView.postMessage(payload);
       showToast('Sent join message to Mobile WebView!');

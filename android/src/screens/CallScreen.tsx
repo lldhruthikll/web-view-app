@@ -28,7 +28,7 @@ interface Participant {
 export default function CallScreen() {
   const navigation = useNavigation<CallNavProp>();
   const route = useRoute<CallRouteProp>();
-  const { roomUrl, roomName } = route.params;
+  const { roomUrl, roomName, token } = route.params;
 
   const callRef = useRef<any>(null);
   const [joining, setJoining] = useState(true);
@@ -76,7 +76,7 @@ export default function CallScreen() {
     call.on('participant-left', handleParticipantUpdate);
     call.on('error', handleError);
 
-    call.join({ url: roomUrl }).catch((err: any) => {
+    call.join({ url: roomUrl, ...(token ? { token } : {}) }).catch((err: any) => {
       console.error('[CallScreen] Join failed:', err);
       Alert.alert('Failed to join room', err?.message || 'Could not connect.', [
         { text: 'OK', onPress: () => navigation.goBack() },
