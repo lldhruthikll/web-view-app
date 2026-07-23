@@ -32,8 +32,8 @@ export default function CallScreen() {
 
   const callRef = useRef<any>(null);
   const [joining, setJoining] = useState(true);
-  const [micMuted, setMicMuted] = useState(false);
-  const [camOff, setCamOff] = useState(false);
+  const [micMuted, setMicMuted] = useState(true);
+  const [camOff, setCamOff] = useState(true);
   const [screenSharing, setScreenSharing] = useState(false);
   const [participants, setParticipants] = useState<Record<string, Participant>>({});
 
@@ -69,7 +69,17 @@ export default function CallScreen() {
 
     try {
       console.log('[CallScreen] Creating Daily call object...');
-      activeCall = Daily.createCallObject();
+      activeCall = Daily.createCallObject({
+        startVideoOff: true,
+        startAudioOff: true,
+        dailyConfig: {
+          userMediaVideoConstraints: {
+            width: { ideal: 320, max: 480 },
+            height: { ideal: 240, max: 360 },
+            frameRate: { ideal: 15, max: 20 },
+          },
+        },
+      });
       callRef.current = activeCall;
 
       activeCall.on('joined-meeting', () => {
@@ -121,17 +131,27 @@ export default function CallScreen() {
 
   const toggleMic = () => {
     if (!callRef.current) return;
-    const next = !micMuted;
-    callRef.current.setLocalAudio(!next);
-    setMicMuted(next);
+    try {
+      const next = !micMuted;
+      callRef.current.setLocalAudio(!next);
+      setMicMuted(next);
+    } catch (err: any) {
+      console.warn('Mic toggle error:', err);
+      Alert.alert('Microphone Error', 'Could not access microphone. Please check permissions.');
+    }
   };
 
   const toggleCamera = () => {
     if (!callRef.current) return;
-    const next = !camOff;
-    callRef.current.setLocalVideo(!next);
-    setCamOff(next);
-    setTimeout(() => updateParticipants(callRef.current), 200);
+    try {
+      const next = !camOff;
+      callRef.current.setLocalVideo(!next);
+      setCamOff(next);
+      setTimeout(() => updateParticipants(callRef.current), 200);
+    } catch (err: any) {
+      console.warn('Camera toggle error:', err);
+      Alert.alert('Camera Error', 'Could not access camera. Please check permissions.');
+    }
   };
 
   const toggleScreenShare = async () => {

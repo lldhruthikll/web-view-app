@@ -2,13 +2,20 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
+import { LogBox } from 'react-native';
 import WebViewScreen from './src/screens/WebViewScreen';
 import CallScreen from './src/screens/CallScreen';
 
-// ─── Suppress Daily.co meeting_join_hook crash ────────────────────────────────
-// The company's Daily domain has meeting_join_hook set to an invalid URL ("0").
-// The native SDK throws MalformedURLException which propagates as a JS error.
-// We intercept it here before it can crash the app.
+// ─── Suppress Daily.co warnings from UI ────────────────────────────────
+LogBox.ignoreLogs([
+  'meeting_join_hook',
+  'no protocol: 0',
+  'NativeRequest',
+  'Daily',
+  'advanced_firewall_control',
+]);
+
+// ─── Suppress Daily.co unhandled rejections from crashing app ─────────
 const _originalHandler = ErrorUtils.getGlobalHandler();
 ErrorUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
   const msg = error?.message || String(error || '');

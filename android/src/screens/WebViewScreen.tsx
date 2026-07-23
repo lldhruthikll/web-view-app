@@ -32,10 +32,15 @@ async function requestPermissions(): Promise<void> {
   if (Platform.OS !== 'android') return;
 
   try {
-    const granted = await PermissionsAndroid.requestMultiple([
+    const permissionsToRequest = [
       PermissionsAndroid.PERMISSIONS.CAMERA,
       PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-    ]);
+    ];
+    if (Platform.OS === 'android' && Platform.Version >= 31) {
+      permissionsToRequest.push(PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT);
+    }
+    
+    const granted = await PermissionsAndroid.requestMultiple(permissionsToRequest);
 
     const cameraOk = granted[PermissionsAndroid.PERMISSIONS.CAMERA] === 'granted';
     const micOk = granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === 'granted';
