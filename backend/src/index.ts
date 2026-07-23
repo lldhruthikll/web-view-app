@@ -45,13 +45,16 @@ app.post('/api/create-room', async (req: Request, res: Response): Promise<void> 
 
   try {
     // Attempt to create room via Daily REST API
+    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 24 hours from now
     const response = await axios.post(
       'https://api.daily.co/v1/rooms',
       {
         name: roomName,
         properties: {
           enable_screenshare: true,
-          enable_recording: false
+          enable_recording: false,
+          exp,
+          meeting_join_hook: '' // clear company-level hook to avoid crash
         }
       },
       {

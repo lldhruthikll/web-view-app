@@ -17,7 +17,7 @@ import { RootStackParamList } from '../../App';
 // ─────────────────────────────────────────────────────────────
 // UPDATE THIS URL every time you restart the Cloudflare Tunnel
 // ─────────────────────────────────────────────────────────────
-const WEB_APP_URL = 'https://cancel-laser-dir-highest.trycloudflare.com';
+const WEB_APP_URL = 'https://web-view-app-ruby.vercel.app/';
 
 type NavProp = StackNavigationProp<RootStackParamList, 'WebView'>;
 
