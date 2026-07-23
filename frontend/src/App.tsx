@@ -63,19 +63,8 @@ export default function App() {
         roomName: data.roomName
       });
 
-      // WebView Bridge: Post Message to Android WebView
-      if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
-        const payload = JSON.stringify({
-          type: 'JOIN_ROOM',
-          roomUrl: data.roomUrl,
-          roomName: data.roomName
-        });
-        window.ReactNativeWebView.postMessage(payload);
-        setPostMessageSent(true);
-        console.log('Successfully posted message to window.ReactNativeWebView:', payload);
-      } else {
-        console.warn('window.ReactNativeWebView bridge is not available in standard web browser.');
-      }
+      // Room created — user will manually tap "Join on Phone" to navigate
+      console.log('Room created:', data.roomUrl);
     } catch (err: any) {
       setErrorMsg(err.message || 'An unexpected error occurred while contacting the server.');
     } finally {
