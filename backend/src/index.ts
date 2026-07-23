@@ -9,6 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const DAILY_API_KEY = process.env.DAILY_API_KEY || '';
 const DAILY_DOMAIN = process.env.DAILY_DOMAIN || 'demo.daily.co';
+const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${PORT}`;
 
 // Middleware
 app.use(cors());
@@ -54,7 +55,7 @@ app.post('/api/create-room', async (req: Request, res: Response): Promise<void> 
           enable_screenshare: true,
           enable_recording: false,
           exp,
-          meeting_join_hook: '' // clear company-level hook to avoid crash
+          meeting_join_hook: `${BACKEND_URL}/api/daily-webhook` // respond 200 OK to avoid crash
         }
       },
       {
@@ -108,6 +109,11 @@ app.post('/api/create-room', async (req: Request, res: Response): Promise<void> 
       error: errorData?.error || errorData?.message || 'Failed to create or retrieve room from Daily.co'
     });
   }
+});
+
+// Daily meeting_join_hook endpoint — returns 200 so Daily doesn't crash the call
+app.post('/api/daily-webhook', (_req: Request, res: Response) => {
+  res.json({ allow: true });
 });
 
 // Health check endpoint
