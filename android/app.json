@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "DailyAgentPoC",
+    "slug": "daily-agent-poc",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0b0f19",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.dailypoc.app",
+      "minSdkVersion": 24,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MEDIA_PROJECTION"
+      ]
+    },
+    "plugins": []
+  }
+}
