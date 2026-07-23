@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0b0f19",
@@ -25,3 +26,4 @@
     "plugins": []
   }
 }
+

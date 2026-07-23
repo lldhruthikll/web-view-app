@@ -9,7 +9,7 @@ import {
   Text,
 } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
@@ -54,18 +54,20 @@ async function requestPermissions(): Promise<void> {
 
 export default function WebViewScreen() {
   const navigation = useNavigation<NavProp>();
+  const isFocused = useIsFocused();
   const webViewRef = useRef<WebView>(null);
 
   useEffect(() => {
     requestPermissions();
   }, []);
 
-  const handleMessage = (event: WebViewMessageEvent) => {
+  const handleMessage = async (event: WebViewMessageEvent) => {
     try {
       const message: WebViewMessage = JSON.parse(event.nativeEvent.data);
       console.log('[WebViewScreen] Received message:', message);
 
       if (message.type === 'JOIN_ROOM' && message.roomUrl && message.roomName) {
+        await requestPermissions();
         navigation.navigate('Call', {
           roomUrl: message.roomUrl,
           roomName: message.roomName,
@@ -79,32 +81,39 @@ export default function WebViewScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <WebView
-        ref={webViewRef}
-        source={{ uri: WEB_APP_URL }}
-        style={styles.webview}
-        onMessage={handleMessage}
-        mediaPlaybackRequiresUserAction={false}
-        allowsInlineMediaPlayback
-        javaScriptEnabled
-        domStorageEnabled
-        startInLoadingState
-        renderLoading={() => (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#6366f1" />
-            <Text style={styles.loadingText}>Loading meeting room...</Text>
-          </View>
-        )}
-        onError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          console.warn('[WebViewScreen] WebView error:', nativeEvent);
-          Alert.alert(
-            'Failed to load page',
-            `Could not load ${WEB_APP_URL}\n\nMake sure the Cloudflare tunnel is running and the URL is up to date.`,
-            [{ text: 'OK' }]
-          );
-        }}
-      />
+      {isFocused ? (
+        <WebView
+          ref={webViewRef}
+          source={{ uri: WEB_APP_URL }}
+          style={styles.webview}
+          onMessage={handleMessage}
+          mediaPlaybackRequiresUserAction={false}
+          allowsInlineMediaPlayback
+          javaScriptEnabled
+          domStorageEnabled
+          startInLoadingState
+          renderLoading={() => (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#6366f1" />
+              <Text style={styles.loadingText}>Loading meeting room...</Text>
+            </View>
+          )}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('[WebViewScreen] WebView error:', nativeEvent);
+            Alert.alert(
+              'Failed to load page',
+              `Could not load ${WEB_APP_URL}\n\nMake sure the Cloudflare tunnel is running and the URL is up to date.`,
+              [{ text: 'OK' }]
+            );
+          }}
+        />
+      ) : (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6366f1" />
+          <Text style={styles.loadingText}>In Call...</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

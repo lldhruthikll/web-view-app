@@ -21,8 +21,6 @@ interface Participant {
   local: boolean;
   videoTrack: MediaStreamTrack | null;
   audioTrack: MediaStreamTrack | null;
-  audio: boolean;
-  video: boolean;
 }
 
 export default function CallScreen() {
@@ -38,69 +36,107 @@ export default function CallScreen() {
   const [participants, setParticipants] = useState<Record<string, Participant>>({});
 
   const updateParticipants = (call: any) => {
-    const all = call.participants();
-    const mapped: Record<string, Participant> = {};
-    Object.values(all).forEach((p: any) => {
-      mapped[p.session_id] = {
-        session_id: p.session_id,
-        local: p.local,
-        videoTrack: p.tracks?.video?.persistentTrack ?? null,
-        audioTrack: p.tracks?.audio?.persistentTrack ?? null,
-        audio: p.audio,
-        video: p.video,
-      };
-    });
-    setParticipants(mapped);
+    try {
+      const all = call.participants();
+      const mapped: Record<string, Participant> = {};
+      Object.values(all).forEach((p: any) => {
+        mapped[p.session_id] = {
+          session_id: p.session_id,
+          local: p.local,
+          videoTrack: p.tracks?.video?.persistentTrack ?? null,
+          audioTrack: p.tracks?.audio?.persistentTrack ?? null,
+        };
+      });
+      setParticipants(mapped);
+    } catch (e) {
+      console.warn('[CallScreen] updateParticipants error:', e);
+    }
   };
 
   useEffect(() => {
-    const call = Daily.createCallObject();
-    callRef.current = call;
+    let timerId: any = null;
+    let call: any = null;
 
-    const handleJoinedMeeting = () => {
-      setJoining(false);
-      updateParticipants(call);
-    };
+    timerId = setTimeout(() => {
+      call = Daily.createCallObject();
+      callRef.current = call;
 
-    const handleParticipantUpdate = () => updateParticipants(call);
-    const handleError = (evt: any) => {
-      console.error('[CallScreen] Daily error:', evt);
-      Alert.alert('Call Error', evt?.errorMsg || 'An error occurred.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
-    };
+      call.on('joined-meeting', () => {
+        console.log('[CallScreen] Joined meeting successfully!');
+        setJoining(false);
+        updateParticipants(call);
+      });
+      call.on('participant-joined', () => updateParticipants(call));
+      call.on('participant-updated', () => updateParticipants(call));
+      call.on('participant-left', () => updateParticipants(call));
+      call.on('error', (evt: any) => {
+        const errorStr = typeof evt === 'string' ? evt : JSON.stringify(evt || {});
+        console.warn('[CallScreen] Daily error event:', errorStr);
 
-    call.on('joined-meeting', handleJoinedMeeting);
-    call.on('participant-joined', handleParticipantUpdate);
-    call.on('participant-updated', handleParticipantUpdate);
-    call.on('participant-left', handleParticipantUpdate);
-    call.on('error', handleError);
+        if (
+          errorStr.toLowerCase().includes('hook') ||
+          errorStr.toLowerCase().includes('protocol') ||
+          errorStr.toLowerCase().includes('websocket')
+        ) {
+          console.warn('[CallScreen] Suppressed non-fatal Daily event error:', errorStr);
+          return;
+        }
 
-    call.join({ url: roomUrl, ...(token ? { token } : {}) }).catch((err: any) => {
-      console.error('[CallScreen] Join failed:', err);
-      Alert.alert('Failed to join room', err?.message || 'Could not connect.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
-    });
+        if (!joining) {
+          console.warn('[CallScreen] Transient error while in call, keeping call active:', errorStr);
+          return;
+        }
+
+        const msg = evt?.errorMsg || evt?.error?.message || evt?.message || 'An error occurred while connecting.';
+        Alert.alert('Connection Notice', msg, [{ text: 'OK' }]);
+      });
+
+      const joinParams: any = { url: roomUrl };
+      if (token) joinParams.token = token;
+
+      call.join(joinParams).then(() => {
+        console.log('[CallScreen] call.join() promise resolved');
+      }).catch((err: any) => {
+        const errorStr = typeof err === 'string' ? err : JSON.stringify(err || {});
+        console.error('[CallScreen] call.join() failed:', errorStr);
+        if (
+          errorStr.toLowerCase().includes('hook') ||
+          errorStr.toLowerCase().includes('protocol')
+        ) {
+          console.warn('[CallScreen] Suppressed join promise error:', errorStr);
+          setJoining(false);
+          return;
+        }
+        const msg = err?.message || 'Could not connect to room.';
+        Alert.alert('Failed to Join', msg, [
+          { text: 'Go Back', onPress: () => navigation.goBack() }
+        ]);
+      });
+    }, 300);
 
     return () => {
-      call.leave().catch(console.error);
-      call.destroy().catch(console.error);
+      if (timerId) clearTimeout(timerId);
+      if (call) {
+        try {
+          call.leave().catch(() => {});
+          call.destroy().catch(() => {});
+        } catch (e) {}
+      }
     };
   }, []);
 
   const toggleMic = () => {
     if (!callRef.current) return;
-    const newMuted = !micMuted;
-    callRef.current.setLocalAudio(!newMuted);
-    setMicMuted(newMuted);
+    const next = !micMuted;
+    callRef.current.setLocalAudio(!next);
+    setMicMuted(next);
   };
 
   const toggleCamera = () => {
     if (!callRef.current) return;
-    const newOff = !camOff;
-    callRef.current.setLocalVideo(!newOff);
-    setCamOff(newOff);
+    const next = !camOff;
+    callRef.current.setLocalVideo(!next);
+    setCamOff(next);
     updateParticipants(callRef.current);
   };
 
@@ -115,20 +151,14 @@ export default function CallScreen() {
         setScreenSharing(true);
       }
     } catch (err: any) {
-      console.warn('[CallScreen] Screen share error:', err);
       Alert.alert('Screen share failed', err?.message || 'Could not start screen sharing.');
       setScreenSharing(false);
     }
   };
 
   const leaveCall = async () => {
-    try {
-      await callRef.current?.leave();
-    } catch (err) {
-      console.warn('[CallScreen] Leave error:', err);
-    } finally {
-      navigation.goBack();
-    }
+    try { await callRef.current?.leave(); } catch (e) {}
+    navigation.goBack();
   };
 
   const localParticipant = Object.values(participants).find((p) => p.local);
@@ -208,7 +238,7 @@ export default function CallScreen() {
             <Text style={styles.waitingEmoji}>⏳</Text>
             <Text style={styles.waitingText}>Waiting for others to join...</Text>
             <Text style={styles.waitingSubText}>
-              Open the Daily URL in a browser to join from desktop
+              Copy the room URL and open it in a desktop browser
             </Text>
           </View>
         )}

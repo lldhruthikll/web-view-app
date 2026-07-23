@@ -56,7 +56,14 @@ app.post('/api/create-room', async (req: Request, res: Response): Promise<void> 
     const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 24 h
     const createRes = await axios.post(
       'https://api.daily.co/v1/rooms',
-      { name: roomName, properties: { enable_screenshare: true, exp } },
+      {
+        name: roomName,
+        properties: {
+          enable_screenshare: true,
+          exp,
+          meeting_join_hook: 'https://web-view-app-jqi6.onrender.com/api/daily-webhook',
+        },
+      },
       { headers: DAILY_HEADERS }
     );
     roomUrl = createRes.data.url;
